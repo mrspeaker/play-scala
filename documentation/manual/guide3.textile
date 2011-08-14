@@ -258,6 +258,8 @@ bc. @(
 
 Reload the page and make sure that everything is still working.
 
+p(note). If you want to logically divide up your view functions by placing the code in separate folders, you'll then have to import the functions in the view they are used. For example, if you placed the display code in another folder: **/yabe/app/views/Application/tags/display.scala.html** then you'd need to import the html with  **@import views.tags.html._** in **index.scala.html**.
+
 h2. <a>Improving the layout</a>
 
 As you can see, the **index.scala.html** template extends **main.scala.html**. Because we want to provide a common layout for all blog pages, with the blog title and authentication links, we need to modify this file.
@@ -323,7 +325,7 @@ Now the blog home page is almost done, but it’s not very pretty. We’ll add s
 
 You can "download it here":files/main.css, and copy it to the **/public/stylesheets/main.css** file.
 
-Refresh the home page and you should now see a styled page.
+Refresh the home page and you should now see a beautifully styled page.
 
 !images/guide3-3!
 

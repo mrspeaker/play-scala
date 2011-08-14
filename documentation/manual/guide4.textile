@@ -1,6 +1,6 @@
 h1. Viewing and posting comments
 
-The blog home page is now set, and we will continue by writing the post details page. This page will show all the comments about the current post, and will include a form to post new comments.
+The blog home page is now set up, so lets move on to post details page. This is where we'll show all the comments for the current post, and include a form for adding new comments.
 
 h2. <a>Creating the ‘show’ action</a>
 
@@ -14,11 +14,11 @@ bc. def show(id: Long) = {
     }
 }
 
-As you can see this action is pretty simple. We declare the **id** method parameter to automatically retrieve the HTTP **id** parameter as a **Long** Scala value. This parameter will be extracted either from the query string, from the URL path or from the request body.
+As you can see this action is pretty simple. We declare the **id** method parameter to automatically retrieve the HTTP **id** parameter as a **Long** Scala value. This parameter will be extracted either from the query string, or from the URL path or from the request body.
 
 p(note). If we try to send an **id** HTTP parameter that is not a valid number, Play will automatically add a validation error to the **errors** container.
 
-This action will display the **/yabe/app/views/Application/show.scala.html** template:
+This action then displays the **/yabe/app/views/Application/show.scala.html** template:
 
 bc. @(post:(models.Post,models.User,Seq[models.Comment]))
  
@@ -28,13 +28,13 @@ bc. @(post:(models.Post,models.User,Seq[models.Comment]))
     
 }
 
-Because we’ve already written the **display** function, this page is really simple to write.
+Because we’ve already written the **display** function, this page is nice and simple.
 
 h2. <a>Adding links to the details page</a>
 
-In the display tag we’ve left all links empty (using **#**). It’s now time to make these links point to the **Application.show** action. With Play you can easily build links in a template using the **action(…) helper**. It uses the router to ‘reverse’ the URL needed to call the specified action. 
+In the display block we’ve left all post title links empty (using **#**). It’s now time to make these links point to the **Application.show** action. With Play you can easily build links in a template using the **action(…) helper**. This makes use of the router to ‘reverse’ the URL needed to call the specified action.
 
-Let’s edit the **/yabe/app/views/tags/display.scala.html** tag:
+Let’s edit the **/yabe/app/views/display.scala.html** tag:
 
 bc. ...
 <h2 class="post-title">
@@ -44,11 +44,11 @@ bc. ...
 </h2>
 ...
 
-You can new refresh the home page, and click a post title to display the post.
+You can new refresh the home page, and click a post title to display the post in a separate page.
 
 !images/guide4-0!
 
-It’s great, but it lacks a link to go back to the home page. Edit the **/yabe/app/views/main.scala.html** template to complete the title link:
+Fantastic! The only issue is there is no way to get back to the home page from the show page. The header link is currently just a #, so we'll make this instead point home. Edit the **/yabe/app/views/main.scala.html** template to complete the title link - by pointing to the reversed *Application.index* action:
 
 bc. ...
 <div id="title">
@@ -66,25 +66,25 @@ We can now navigate between the home page and the post detail pages.
 
 h2. <a>Specifying a better URL</a>
 
-As you can see, the post detail page URL looks like:
+As you can see, the post detail page URL looks something like:
 
 bc. /application/show?id=1
 
-This is because Play has used the default ‘catch all’ route.
+This is because Play has used the default ‘catch all’ route in the routes file.
 
 bc. *       /{controller}/{action}                  {controller}.{action}
 
-We can have a better URL by specifying a custom path for the **Application.show** action. Edit the **/yabe/conf/routes** file and add this route after the first one:
+We can have nicer URLs by specifying a custom path for the **Application.show** action. Edit the **/yabe/conf/routes** file and add this route after the first one, and before the catch all:
 
 bc. GET     /posts/{id}                             Application.show
 
-p(note). This way the **id** parameter will be extracted from the URL path. 
+p(note). This way the **id** parameter will be extracted from the URL path and passed to the controller code.
 
-Refresh the browser and check that it now uses the correct URL.
+Refresh the browser and check that it now uses the correct, prettier URL.
 
 h2. <a>Adding pagination</a>
 
-To allow users to navigate easily through posts, we will add a pagination mechanism. We’ll extend the Post class to be able to fetch previous and next post as required.
+Next up, to allow users to navigate easily through posts, we will add a pagination mechanism. This involves extending the Post class to be able to fetch previous and next posts as required.
 
 Here is the SQL query we will use to fetch both previous and next post from a particular element:
 
@@ -104,7 +104,7 @@ And we will translate the result as a @(Option[Post], Option[Post])@ value, wher
 
 bc. opt('pos.is("prev") ~> Post.on("")) ~ opt('pos.is("next") ~> Post.on(""))
 
-Here is the new @prevNext@ method we need to add to the @Post@ class:
+Finally, here is the entire @prevNext@ method we need to add to the @Post@ class.
 
 bc. def prevNext = {        
     SQL(
@@ -128,7 +128,9 @@ bc. def prevNext = {
     )
 }
 
-Now, let's add this information to the *show.html* template:
+p(note). This method needs to be added to the case class definition. Because it's our first method, you'll need to wrap it with curly braces: @case class Post( id: Pk[Long]... ) { def prevNext = { ... } }@
+
+Now, let's add this information to the *show* action method in the controller, so it can be passed to our view:
 
 bc. def show(id: Long) = {
     Post.byIdWithAuthorAndComments(id).map { post =>
@@ -138,7 +140,7 @@ bc. def show(id: Long) = {
     }
 }
 
-We will call these methods several times during a request so they could be optimized, but they’re good enough for now. Also, add the pagination links at the top of the **show.scala.html** template:
+We will call these methods several times during a request so they could be optimized, but they’re good enough for now. Next, we can add the pagination links at the top of the **show.scala.html** template:
 
 bc. @(
     post:(models.Post,models.User,Seq[models.Comment]),
@@ -168,11 +170,11 @@ bc. @(
     
 }
 
-It’s better now.
+The previous and next links appear on the blog detail page and correctly link to the previous and next items. Notice that if there is no item, the link will be absent. Nifty!
 
 h2. <a>Adding the comment form</a>
 
-Now it’s time to set up a comments form. We’ll start by adding the **postComment** action method to the Application controller.
+There's still no way for our users to comment, so it’s time to set up a comments form. We’ll start by adding the **postComment** action method to the Application controller.
 
 bc. def postComment(postId:Long) = {
     val author = params.get("author")
@@ -181,11 +183,11 @@ bc. def postComment(postId:Long) = {
     Action(show(postId))
 }
 
-As you can see we return an @Action@ value to indicate that we want to redirect to the @show(postId)@ action.
+When a comment is created we want to display the @show@ view - so we return an @Action@ value to indicate that we want to redirect to the @show(postId)@ action and display the new comment on the page.
 
-Please note also that we use the @create@ method, and not the @insert@. The @Comment@ entity primary key id value is set by the database, not by the applicaton. If your application sets the id value, use the @insert@ method.
+Please note also that we use the @create@ method, and not the @insert@. The @Comment@ entity primary key id value is set by the database, not by the application. If your application sets the id value, use the @insert@ method.
 
-Let’s write the HTML form in the **show.html** template (after the **#{display /}** tag in fact):
+To populate the comment data we need to add the HTML form in the **show.scala.html** template (after the **#{display /}** tag):
 
 bc. <h3>Post a comment</h3>
  
@@ -203,13 +205,13 @@ bc. <h3>Post a comment</h3>
     </p>
 }
 
-You can now try posting a new comment. It should just work.
+That's all there is to it. You can now try posting a new comment.
 
 !images/guide4-1!
 
 h2. <a>Adding validation</a>
 
-Currently we don’t validate the form content before creating the comment. We would like to make both fields required. We can easily use the Play validation mechanism to ensure that the HTTP parameters are correctly filled in. Modify the **postComment** action to some validation and check that no error occurs:
+Currently we don’t validate the form content before creating the comment. We would like to make both fields required. We can easily use the Play validation mechanism to ensure that the HTTP parameters are correctly filled in. We just have to modify the **postComment** action to add a couple of validation calls tocheck that no errors have occurred:
 
 bc. def postComment(postId:Long) = {
     val author = params.get("author")
@@ -226,7 +228,7 @@ bc. def postComment(postId:Long) = {
 
 p(note). **Don’t forget** to import **play.data.validation._** as well.
 
-As you can see, in case of validation errors, we re-display the post detail page. We have to modify the form code to display the error message:
+If we do hit any problems, then we re-display the post detail page. We have to modify the form code to display the error message, and also re-populate the form fields:
 
 bc. <h3>Post a comment</h3>
  
@@ -265,14 +267,14 @@ bc. @(
  
 …
 
-To make the UI feedback more pleasant for the poster, we will add a little JavaScript to automatically set focus on the comment form in case of an error. As this script uses "JQuery Tools Expose":files/jquery.tools.min.js as support libraries, you have to include them. Download these two libraries to the **yabe/public/javascripts/** directory and modify the **main.html** template to include them:
+To make the UI feedback more pleasant for the poster, we will add a little JavaScript to automatically set focus on the comment form in case of an error. As this script uses jQuery and "jQuery Tools Expose":files/jquery.tools.min.js as a support libraries, you have to include them. Download these two libraries to the **yabe/public/javascripts/** directory and modify the **main.html** template to include them:
 
 bc. …
-<script src="@asset("public/javascripts/jquery-1.5.2.min.js")"></script>
+<script src="@asset("public/javascripts/jquery-1.6.min.js")"></script>
 <script src="@asset("public/javascripts/jquery.tools.min.js")"></script>
 …
 
-Now you can add this script to the **show.scala.html** template (add it at the end of the page):
+Now you can add this bit of JavaScript to the **show.scala.html** template (we'll add it at the end of the page):
 
 bc. <script type="text/javascript" charset="utf-8">
     $(function() {         
@@ -291,9 +293,9 @@ bc. <script type="text/javascript" charset="utf-8">
 
 !images/guide4-2!
 
-The comment form looks pretty cool now. We will add two more things.
+The expose functionality "dims" the contents of the page and sets highlights the form field to strongly indicate to the user where the problem is. And it make the comment form looks pretty cool.
 
-First, we will display a success message after a comment is successfully posted. For that, we use the flash scope that allows us to pass messages from one action call to the next one.
+The next finishing touch will be to display a success message after a comment is successfully posted. For that, we use the flash scope that allows us to pass messages from one action call to the next one.
 
 Modify the **postComment** action to add a success message:
 
@@ -321,11 +323,11 @@ bc. …
 
 !images/guide4-3!
 
-The last thing we will adjust in this form is the URL used for the **postComment** action. As always, it uses the default catch-all route because we didn’t define any specific route. So add this route to the application routes file:
+And finally, The last thing we will adjust in our comments form is the URL used for the **postComment** action. As before, we are currently using the default catch-all route (because we didn’t define any specific route for posting comments). So add this route to the application routes file:
 
 bc. POST    /posts/{postId}/comments                Application.postComment
 
-That’s done.
+Although the user doesn't see it - it changes the form's action into a nice pretty URL. And that’s done.
 
 p(note). Next: %(next)"Setting up a Captcha":guide5%. 
 
